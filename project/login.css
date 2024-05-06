@@ -1,0 +1,69 @@
+.container{
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+#password-box{
+  position: relative;
+}
+#show-hide-box{
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+#show-hide-box:hover{
+  opacity: 0.8;
+}
+
+
+.bg-image-vertical {
+position: relative;
+overflow: hidden;
+background-repeat: no-repeat;
+background-position: right center;
+background-size: auto 100%;
+}
+
+@media (min-width: 1025px) {
+.h-custom-2 {
+height: 100%;
+}
+}
+
+#form{
+  margin-left: 10%
+}
+
+#password-input{	
+  appearance: none;
+               border: none;
+               outline: none;
+               border-bottom: .2em solid lightblue;
+               background: rgba(lightblue, .2);
+               border-radius: .2em .2em 0 0;
+               padding: .4em;
+               color: black;
+               width: 100%;
+               }
+
+
+#username-input{
+  appearance: none;
+   border: none;
+   outline: none;
+   border-bottom: .2em solid lightblue;
+   background: rgba(lightblue, .2);
+   border-radius: .2em .2em 0 0;
+   padding: .4em;
+   color: black;
+   width: 100%;
+}
+#login-button{
+  width: 100%
+}
