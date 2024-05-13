@@ -1,36 +1,36 @@
-let partita;
+let game;
 
-function inizializzaPartita() {
+function initializeGame() {
     fetch('/')
         .then(response => response.json())
         .then(data => {
-            partita = data;
-            aggiornaInterfaccia();
+            game = data;
+            updateUI();
         });
 }
 
-function aggiornaInterfaccia() {
-    document.getElementById('parola').textContent = partita.parola.replace(/\w/g, lettera => partita.lettereIndovinate.includes(lettera) ? lettera : '_');
-    document.getElementById('tentativi').textContent = `Tentativi rimasti: ${partita.tentativiRimasti}`;
+function updateUI() {
+    document.getElementById('word').textContent = game.word.replace(/\w/g, letter => game.guessedLetters.includes(letter) ? letter : '_');
+    document.getElementById('attempts').textContent = `Tentativi rimasti: ${game.attemptsLeft}`;
 }
 
-function indovinaLettera() {
-    const lettera = document.getElementById('indovina').value.toLowerCase();
-    fetch('/indovina', {
+function guessLetter() {
+    const letter = document.getElementById('guess').value.toLowerCase();
+    fetch('/guess', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ lettera })
+        body: JSON.stringify({ letter })
     })
     .then(response => response.json())
     .then(data => {
-        partita = data;
-        aggiornaInterfaccia();
-        if (partita.finePartita) {
+        game = data;
+        updateUI();
+        if (game.gameOver) {
             alert('Fine della partita!');
         }
     });
 }
 
-window.onload = inizializzaPartita;
+window.onload = initializeGame;
