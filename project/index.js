@@ -1,59 +1,73 @@
 const http = require('http');
 const fs = require('fs');
+const sqlite3 = require('sqlite3').verbose();
 
-const dizionario = fs.readFileSync('dizionario.txt', 'utf8').split('\n');
+const dictionary = fs.readFileSync('dictionary.txt', 'utf8').split('\n');
 
-function scegliParolaCasuale() {
-    return dizionario[Math.floor(Math.random() * dizionario.length)];
+function chooseRandomWord() {
+    return dictionary[Math.floor(Math.random() * dictionary.length)];
 }
 
-function inizializzaPartita() {
+function initializeGame() {
     return {
-        parola: scegliParolaCasuale().toLowerCase(),
-        lettereIndovinate: [],
-        tentativiRimasti: 7,
-        finePartita: false
+        word: chooseRandomWord().toLowerCase(),
+        guessedLetters: [],
+        attemptsLeft: 7,
+        gameOver: false
     };
 }
 
-function controllaLettera(parola, lettera) {
-    return parola.includes(lettera);
+function checkLetter(word, letter) {
+    return word.includes(letter);
 }
 
-function aggiornaStatoPartita(partita, lettera) {
-    if (partita.parola.includes(lettera)) {
-        partita.lettereIndovinate.push(lettera);
+function updateGameState(game, letter) {
+    if (game.word.includes(letter)) {
+        game.guessedLetters.push(letter);
     } else {
-        partita.tentativiRimasti--;
+        game.attemptsLeft--;
     }
-    if (partita.tentativiRimasti === 0 || partita.parola.split('').every(lettera => partita.lettereIndovinate.includes(lettera))) {
-        partita.finePartita = true;
+    if (game.attemptsLeft === 0 || game.word.split('').every(letter => game.guessedLetters.includes(letter))) {
+        game.gameOver = true;
     }
 }
+
+let game;
+let db = new sqlite3.Database('hall_of_fame.db');
 
 const server = http.createServer((req, res) => {
     if (req.url === '/') {
-        const partita = inizializzaPartita();
+        game = initializeGame();
         res.writeHead(200, {'Content-Type': 'application/json'});
-        res.end(JSON.stringify(partita));
-    } else if (req.url.startsWith('/indovina')) {
-        let corpo = '';
-        req.on('data', pezzo => {
-            corpo += pezzo.toString();
+        res.end(JSON.stringify(game));
+    } else if (req.url.startsWith('/guess')) {
+        let body = '';
+        req.on('data', chunk => {
+            body += chunk.toString();
         });
         req.on('end', () => {
-            const dati = JSON.parse(corpo);
-            aggiornaStatoPartita(partita, dati.lettera);
+            const data = JSON.parse(body);
+            updateGameState(game, data.letter);
             res.writeHead(200, {'Content-Type': 'application/json'});
-            res.end(JSON.stringify(partita));
+            res.end(JSON.stringify(game));
+        });
+    } else if (req.url === '/hall_of_fame') {
+        db.serialize(() => {
+            db.all('SELECT * FROM hall_of_fame ORDER BY score DESC LIMIT 10', (err, rows) => {
+                if (err) {
+                    console.error(err.message);
+                }
+                res.writeHead(200, {'Content-Type': 'application/json'});
+                res.end(JSON.stringify(rows));
+            });
         });
     } else {
         res.writeHead(404);
-        res.end('Non trovato');
+        res.end('Not Found');
     }
 });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Server in ascolto sulla porta ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
