@@ -1,6 +1,7 @@
 const http = require('http');
 const fs = require('fs');
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
+
 
 const dictionary = fs.readFileSync('dictionary.txt', 'utf8').split('\n');
 
@@ -21,7 +22,7 @@ function checkLetter(word, letter) {
     return word.includes(letter);
 }
 
-function updateGameState(game, letter) {
+async function updateGameState(game, letter) {
     if (game.word.includes(letter)) {
         game.guessedLetters.push(letter);
     } else {
@@ -33,9 +34,8 @@ function updateGameState(game, letter) {
 }
 
 let game;
-let db = new sqlite3.Database('hall_of_fame.db');
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
     if (req.url === '/') {
         game = initializeGame();
         res.writeHead(200, {'Content-Type': 'application/json'});
@@ -45,22 +45,24 @@ const server = http.createServer((req, res) => {
         req.on('data', chunk => {
             body += chunk.toString();
         });
-        req.on('end', () => {
+        req.on('end', async () => {
             const data = JSON.parse(body);
-            updateGameState(game, data.letter);
+            await updateGameState(game, data.letter);
             res.writeHead(200, {'Content-Type': 'application/json'});
             res.end(JSON.stringify(game));
         });
     } else if (req.url === '/hall_of_fame') {
-        db.serialize(() => {
-            db.all('SELECT * FROM hall_of_fame ORDER BY score DESC LIMIT 10', (err, rows) => {
-                if (err) {
-                    console.error(err.message);
-                }
-                res.writeHead(200, {'Content-Type': 'application/json'});
-                res.end(JSON.stringify(rows));
-            });
-        });
+        try {
+            const client = await pool.connect();
+            const result = await client.query('SELECT * FROM hall_of_fame ORDER BY score DESC LIMIT 10');
+            client.release();
+            res.writeHead(200, {'Content-Type': 'application/json'});
+            res.end(JSON.stringify(result.rows));
+        } catch (err) {
+            console.error('Errore durante la query:', err);
+            res.writeHead(500);
+            res.end('Internal Server Error');
+        }
     } else {
         res.writeHead(404);
         res.end('Not Found');
