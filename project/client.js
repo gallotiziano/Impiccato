@@ -1,36 +1,60 @@
-let game;
+let word;
+let guessedLetters = [];
+let attemptsLeft = 7;
 
-function initializeGame() {
-    fetch('/')
-        .then(response => response.json())
-        .then(data => {
-            game = data;
-            updateUI();
-        });
+const impiccatoImage = document.getElementById('impiccato-image');
+const wordDisplay = document.getElementById('word-display');
+const lettersContainer = document.getElementById('letters-container');
+
+async function loadWord() {
+    const response = await fetch('/random-word');
+    const data = await response.json();
+    word = data.word.toLowerCase();
+    guessedLetters = [];
+    attemptsLeft = 7;
+    updateUI();
+}
+
+function initializeUI() {
+    for (let i = 97; i <= 122; i++) {
+        const letter = String.fromCharCode(i);
+        const button = document.createElement('button');
+        button.innerText = letter.toUpperCase();
+        button.classList.add('btn', 'btn-primary', 'mr-2', 'mb-2');
+        button.addEventListener('click', () => guessLetter(letter));
+        lettersContainer.appendChild(button);
+    }
 }
 
 function updateUI() {
-    document.getElementById('word').textContent = game.word.replace(/\w/g, letter => game.guessedLetters.includes(letter) ? letter : '_');
-    document.getElementById('attempts').textContent = `Tentativi rimasti: ${game.attemptsLeft}`;
-}
-
-function guessLetter() {
-    const letter = document.getElementById('guess').value.toLowerCase();
-    fetch('/guess', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ letter })
-    })
-    .then(response => response.json())
-    .then(data => {
-        game = data;
-        updateUI();
-        if (game.gameOver) {
-            alert('Fine della partita!');
-        }
+    impiccatoImage.src = `/images/impiccato${7 - attemptsLeft}.png`;
+    wordDisplay.textContent = word
+        .split('')
+        .map(letter => guessedLetters.includes(letter) ? letter : '_')
+        .join(' ');
+    const buttons = document.querySelectorAll('.btn');
+    buttons.forEach(button => {
+        const letter = button.innerText.toLowerCase();
+        button.disabled = guessedLetters.includes(letter);
     });
 }
 
-window.onload = initializeGame;
+function guessLetter(letter) {
+    if (word.includes(letter)) {
+        guessedLetters.push(letter);
+    } else {
+        attemptsLeft--;
+    }
+    updateUI();
+    if (attemptsLeft === 0 || word.split('').every(letter => guessedLetters.includes(letter))) {
+        setTimeout(() => {
+            alert('Hai ' + (attemptsLeft > 0 ? 'Vinto!' : 'Perso!'));
+            loadWord();
+        }, 500);
+    }
+}
+
+window.onload = () => {
+    initializeUI();
+    loadWord();
+};
