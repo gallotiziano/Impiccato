@@ -1,56 +1,41 @@
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
+const express = require('express');
+const https = require('https');
+const app = express();
+const port = 5005;
 
-const dizionario = fs.readFileSync('dizionario.txt', 'utf8').split('\n');
+const loadWords = () => {
+  return new Promise((resolve, reject) => {
+    https.get('https://github.com/napolux/paroleitaliane/blob/master/paroleitaliane/60000_parole_italiane.txt', (resp) => {
+      let data = '';
 
-function chooseRandomWord() {
-    return dizionario[Math.floor(Math.random() * dizionario.length)].trim();
-}
+      resp.on('data', (chunk) => {
+        data += chunk;
+      });
 
-const server = http.createServer((req, res) => {
-    if (req.url === '/') {
-        fs.readFile('index.html', (err, data) => {
-            if (err) {
-                res.writeHead(500);
-                res.end('Error loading index.html');
-                return;
-            }
-            res.writeHead(200, { 'Content-Type': 'text/html' });
-            res.end(data);
-        });
-    } else if (req.url === '/script.js') {
-        fs.readFile('script.js', (err, data) => {
-            if (err) {
-                res.writeHead(500);
-                res.end('Error loading script.js');
-                return;
-            }
-            res.writeHead(200, { 'Content-Type': 'application/javascript' });
-            res.end(data);
-        });
-    } else if (req.url.startsWith('/images/')) {
-        const imgPath = path.join(__dirname, req.url);
-        fs.readFile(imgPath, (err, data) => {
-            if (err) {
-                res.writeHead(404);
-                res.end('Image not found');
-                return;
-            }
-            res.writeHead(200, { 'Content-Type': 'image/png' });
-            res.end(data);
-        });
-    } else if (req.url === '/random-word') {
-        const word = chooseRandomWord();
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ word }));
-    } else {
-        res.writeHead(404);
-        res.end('Not Found');
+      resp.on('end', () => {
+        resolve(data.split('\n'));
+      });
+
+    }).on("error", (err) => {
+      reject(err);
+    });
+  });
+};
+
+app.get('/parolaCasuale', async (req, res) => {
+  try {
+    const words = await loadWords();
+    if (words.length === 0) {
+      return res.status(500).json({ error: 'Errore nel caricamento delle parole' });
     }
+    const randomWord = words[Math.floor(Math.random() * words.length)];
+    res.json({ word: randomWord.trim() });
+  } catch (error) {
+    console.error('Errore nel caricamento delle parole:', error);
+    res.status(500).json({ error: 'Errore nel caricamento delle parole' });
+  }
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+app.listen(port, () => {
+  console.log(`Server in ascolto sulla porta' ${port}`);
 });

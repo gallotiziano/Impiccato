@@ -1,31 +1,20 @@
-#impiccato-container {
-    margin-bottom: 20px;
-}
-
-#impiccato-image {
-    max-width: 100%;
-}
-
-#word-container {
-    margin-bottom: 20px;
-}
-
-#letters-container {
-    display: flex;
-    flex-wrap: wrap;
-}
-
-.button {
-    margin: 5px;
-    padding: 10px;
-    font-size: 16px;
-    cursor: pointer;
-}
-
-.green {
-    background-color: green;
-}
-
-.red {
-    background-color: red;
-}
+    #impiccato {
+      margin-bottom: 20px;
+    }
+    #parola {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    .lettera {
+      margin: 2px;
+      padding: 10px;
+      font-size: 18px;
+      cursor: pointer;
+      background-color: lightgray;
+    }
+    .lettera-corretta {
+      background-color: green;
+    }
+    .lettera-sbagliata {
+      background-color: red;
+    }
