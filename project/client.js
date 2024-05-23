@@ -48,11 +48,11 @@ const lettere = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
             parolaMostrata[index] = lettera;
           }
         });
-        button.className = 'lettera lettera-corretta';
+        button.className = 'lettera lettera corretta';
       } else {
         errori++;
         aggiornaImmagine();
-        button.className = 'lettera lettera-sbagliata';
+        button.className = 'lettera lettera sbagliata';
       }
       mostraParola();
       verificaVittoria();
